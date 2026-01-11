@@ -78,10 +78,9 @@ python benchmark.py
 ### 4.1 Démarrage de MongoDB (instance standalone)
 
 ```bash
-# Démarrer MongoDB avec la base standalone
+# Démarrer MongoDB avec la base
 cd ../../data
-mkdir -p mongo/standalone
-mongod --dbpath ./data/mongo/standalone
+mongod –dbpath ./data/mongo/standalone
 ```
 
 ### 4.2 Migration des Données vers MongoDB
@@ -89,7 +88,7 @@ mongod --dbpath ./data/mongo/standalone
 #### Structure Normalisée (Flat)
 
 ```bash
-cd ../scripts/phase2_mongodb
+cd ../phase2_mongodb
 python migrate_flat.py
 ```
 
@@ -119,14 +118,22 @@ python compare_performance.py
 ### 5.1 Arrêt de l'instance MongoDB Standalone
 
 ```bash
-# Arrêter MongoDB
-pkill -f "mongod"
+# Arrêter MongoDB lancé via Homebrew
+brew services stop mongodb-community
 ```
 
-### 5.2 Se placer dans le répertoire pour le Replica Set
+### 5.2 Création des Répertoires pour le Replica Set
 
 ```bash
 cd ../phase3_replica
+
+# Les répertoires seront créés automatiquement par le script
+# Mais vous pouvez les créer manuellement :
+mkdir -p ../../data/mongo/db-1
+mkdir -p ../../data/mongo/db-2
+mkdir -p ../../data/mongo/db-3
+mkdir -p ../../data/mongo/standalone
+mkdir -p ../../data/mongo/logs
 ```
 
 ### 5.3 Configuration des Permissions du Script
@@ -160,15 +167,22 @@ mongosh --port 27017 --eval "rs.status()"
 mongosh --port 27017 --quiet --eval "rs.status().members.forEach(m => print(m.name + ' : ' + m.stateStr))"
 
 # Vérifier les données
-mongosh --port 27019 --eval "use cineexplorer; db.movies.countDocuments({})"
+mongosh --port 27019 --eval 
+> use cineexplorerdb
+> de.movies.countDocuments({})
 ```
 
 ### 5.6 Architecture du Replica Set
 
-- **bd-1** (port 27017) : SECONDARY
+- **bd-1** (port 27017) : PRIMARY
 - **bd-2** (port 27018) : SECONDARY
-- **bd-3** (port 27019) : PRIMARY
+- **bd-3** (port 27019) : SECONDARY
 - **standalone** (port 27020) : Source des données (peut être arrêté après l'import)
+
+On peut tester d'arrêter le primaire et voir ce qu'il se passe en exécutant :
+```python
+python test_failover
+```
 
 ## 6. Lancement de l'Application Django
 
