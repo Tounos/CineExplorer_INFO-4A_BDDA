@@ -32,7 +32,7 @@ Ce document récapitule toutes les commandes nécessaires pour configurer et lan
 
 ```bash
 # Cloner le dépôt (si applicable)
-git clone <repository-url>
+git clone https://github.com/Tounos/CineExplorer_INFO-4A_BDDA
 cd CineExplorer_INFO-4A_BDDA
 ```
 
