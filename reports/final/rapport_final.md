@@ -23,53 +23,50 @@
 
 # 1. Introduction
 
-## 1.1 Contexte du projet
+## Résumé
 
 CineExplorer est une application web de consultation de films développée dans le cadre du cours de Base de Données Avancées. Ce projet explore les différentes technologies de stockage de données (SQL et NoSQL) et leur intégration dans une application web moderne.
 
-## 1.2 Objectifs
+## Objectifs
 
 - Maîtriser les concepts de bases de données relationnelles et documentaires
 - Implémenter une architecture multi-bases de données
 - Mettre en place un replica set MongoDB pour la haute disponibilité
 - Développer une interface web ergonomique avec Django
 
-## 1.3 Données utilisées
+## Données utilisées
 
-Le projet utilise un sous-ensemble des données IMDb (Internet Movie Database) comprenant :
-- ~100 000 films et séries
-- ~200 000 personnes (acteurs, réalisateurs, etc.)
-- Relations : casting, réalisation, genres, notes
+Le projet utilise le jeu de données "imdb-medium" d'Ametice.
 
 ---
 
 # 2. Architecture globale
 
-## 2.1 Schéma d'architecture
+## Schéma d'architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT (Navigateur)                       │
-│                    HTML / CSS / JavaScript                       │
-│                    Bootstrap 5 + Chart.js                        │
+│                        CLIENT (Navigateur)                      │
+│                    HTML / CSS / JavaScript                      │
+│                    Bootstrap 5 + Chart.js                       │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ HTTP
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      SERVEUR DJANGO                              │
+│                      SERVEUR DJANGO                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
 │  │   Views     │  │  Templates  │  │      Static files       │  │
 │  │  (views.py) │  │   (HTML)    │  │    (CSS, JS, images)    │  │
 │  └──────┬──────┘  └─────────────┘  └─────────────────────────┘  │
-│         │                                                        │
+│         │                                                       │
 │  ┌──────▼──────────────────────────────────────────────────┐    │
-│  │                    SERVICES LAYER                        │    │
+│  │                    SERVICES LAYER                       │    │
 │  │  ┌──────────────────┐    ┌──────────────────────────┐   │    │
 │  │  │  sqlite_service  │    │     mongo_service        │   │    │
 │  │  │                  │    │                          │   │    │
-│  │  │ - get_movies()   │    │ - get_movie_details()   │   │    │
-│  │  │ - search()       │    │ - get_stats()           │   │    │
-│  │  │ - get_genres()   │    │ - get_person_details()  │   │    │
+│  │  │ - get_movies()   │    │ - get_movie_details()    │   │    │
+│  │  │ - search()       │    │ - get_stats()            │   │    │
+│  │  │ - get_genres()   │    │ - get_person_details()   │   │    │
 │  │  └────────┬─────────┘    └────────────┬─────────────┘   │    │
 │  └───────────┼───────────────────────────┼─────────────────┘    │
 └──────────────┼───────────────────────────┼──────────────────────┘
@@ -78,19 +75,19 @@ Le projet utilise un sous-ensemble des données IMDb (Internet Movie Database) c
 ┌──────────────────────┐    ┌─────────────────────────────────────┐
 │       SQLite         │    │      MongoDB Replica Set            │
 │                      │    │                                     │
-│   ┌──────────────┐   │    │  ┌─────────┐ ┌─────────┐ ┌───────┐ │
-│   │   imdb.db    │   │    │  │ Primary │ │Secondary│ │Second.│ │
-│   │              │   │    │  │ :27017  │ │ :27018  │ │:27019 │ │
-│   │ - movies     │   │    │  └────┬────┘ └────┬────┘ └───┬───┘ │
-│   │ - persons    │   │    │       │           │          │     │
-│   │ - principals │   │    │       └───────────┴──────────┘     │
+│   ┌──────────────┐   │    │  ┌─────────┐ ┌─────────┐ ┌───────┐  │
+│   │   imdb.db    │   │    │  │ Primary │ │Secondary│ │Second.│  │
+│   │              │   │    │  │ :27017  │ │ :27018  │ │:27019 │  │
+│   │ - movies     │   │    │  └────┬────┘ └────┬────┘ └───┬───┘  │
+│   │ - persons    │   │    │       │           │          │      │
+│   │ - principals │   │    │       └───────────┴──────────┘      │
 │   │ - genres     │   │    │            Réplication              │
 │   │ - ratings    │   │    │                                     │
 │   └──────────────┘   │    │  Collection: movies_complete        │
 └──────────────────────┘    └─────────────────────────────────────┘
 ```
 
-## 2.2 Organisation des fichiers
+## Organisation des fichiers
 
 ```
 cineexplorer_medium/
@@ -98,33 +95,33 @@ cineexplorer_medium/
 │   ├── csv/              # Données sources et SQLite
 │   │   ├── *.csv         # Fichiers CSV originaux
 │   │   └── imdb.db       # Base SQLite
-│   └── mongo/            # Données MongoDB
-│       ├── db-1/         # Nœud primaire
-│       ├── db-2/         # Nœud secondaire 1
-│       └── db-3/         # Nœud secondaire 2
+│   └── mongo/            # Cluster MongoDB
+│       ├── db-1/         # Noeud 1
+│       ├── db-2/         # Noeud 2
+│       └── db-3/         # Noeud 3
 │
 ├── django/               # Application web
 │   ├── config/           # Configuration Django
 │   ├── movies/           # Application principale
-│   │   ├── views.py      # Contrôleurs
+│   │   ├── views.py      
 │   │   ├── mongo_service.py
 │   │   ├── sqlite_service.py
-│   │   └── templates/    # Vues HTML
-│   └── static/           # Ressources statiques
+│   │   └── templates/    
+│   └── static/           
 │
 ├── scripts/              # Scripts d'administration
 │   ├── phase1_sqlite/    # Import et requêtes SQL
 │   ├── phase2_mongodb/   # Migration et indexation
 │   └── phase3_replica/   # Configuration replica set
 │
-└── reports/              # Documentation
+└── reports/              # Rapports PDF
 ```
 
 ---
 
 # 3. Choix technologiques
 
-## 3.1 Base de données relationnelle : SQLite
+## Base de données relationnelle : SQLite
 
 **Justification du choix :**
 
@@ -141,41 +138,23 @@ SQLite est parfaitement adapté à ce projet car :
 - Les performances en lecture sont excellentes pour notre volume de données
 - L'intégration avec Python est native
 
-## 3.2 Base de données documentaire : MongoDB
+## Base de données documentaire : MongoDB
 
 **Justification du choix :**
 
-| Critère | MongoDB | Alternative (CouchDB) |
-|---------|---------|----------------------|
-| Flexibilité du schéma | Excellente | Bonne |
-| Requêtes complexes | Aggregation Pipeline | Map/Reduce |
-| Écosystème Python | PyMongo mature | Moins développé |
-| Replica Set | Natif et simple | Plus complexe |
+| Critère               | MongoDB              | Alternative (CouchDB) |
+| --------------------- | -------------------- | --------------------- |
+| Flexibilité du schéma | Excellente           | Bonne                 |
+| Requêtes complexes    | Aggregation Pipeline | Map/Reduce            |
+| Écosystème Python     | PyMongo mature       | Moins développé       |
+| Replica Set           | Natif et simple      | Plus complexe         |
 
 MongoDB a été choisi car :
 - Le modèle documentaire est idéal pour stocker des films avec leurs données imbriquées
 - L'Aggregation Pipeline permet des statistiques complexes
 - Le replica set se configure facilement
-- PyMongo est un driver mature et bien documenté
 
-## 3.3 Framework web : Django
-
-**Justification du choix :**
-
-| Critère | Django | Alternative (Flask) |
-|---------|--------|---------------------|
-| Structure | Batteries included | Minimaliste |
-| Templates | Moteur intégré | Jinja2 à ajouter |
-| ORM | Inclus | SQLAlchemy à ajouter |
-| Courbe d'apprentissage | Moyenne | Facile |
-
-Django offre :
-- Une structure de projet claire et organisée
-- Un système de templates puissant
-- Une gestion des fichiers statiques intégrée
-- Une grande communauté et documentation
-
-## 3.4 Frontend : Bootstrap 5 + Chart.js
+## Frontend : Bootstrap 5 + Chart.js
 
 - **Bootstrap 5** : Framework CSS responsive, rapide à mettre en place
 - **Chart.js** : Bibliothèque de graphiques simple et légère
@@ -185,9 +164,9 @@ Django offre :
 
 # 4. Description des fonctionnalités
 
-## 4.1 Page d'accueil
+## Page d'accueil
 
-**Route** : `/`
+**Chemin** : `/` (index.html)
 
 La page d'accueil présente un tableau de bord avec les statistiques générales :
 - Nombre total de films
@@ -199,9 +178,9 @@ La page d'accueil présente un tableau de bord avec les statistiques générales
 
 **Implémentation** : Les statistiques sont calculées via des requêtes d'agrégation MongoDB.
 
-## 4.2 Liste des films
+## Liste des films
 
-**Route** : `/movies/`
+**Chemin** : `/movies/`
 
 Fonctionnalités :
 - Affichage paginé (20 films par page)
@@ -219,9 +198,9 @@ WHERE m.titleType IN ('movie', 'tvMovie')
 ORDER BY r.averageRating DESC
 ```
 
-## 4.3 Détail d'un film
+## Détail d'un film
 
-**Route** : `/movies/<id>/`
+**Chemin** : `/movies/<id>/`
 
 Informations affichées :
 - Titre original et français
@@ -236,9 +215,9 @@ Informations affichées :
 
 **Implémentation** : Document MongoDB complet avec enrichissement des personnages depuis SQLite.
 
-## 4.4 Recherche
+## Recherche
 
-**Route** : `/search/?q=<...>`
+**Chemin** : `/search/?q=<...>`
 
 Recherche unifiée sur :
 - Titres de films (original et localisé)
@@ -248,9 +227,9 @@ Résultats séparés en deux sections avec liens vers les détails.
 
 **Implémentation** : Requêtes SQLite avec `LIKE` pour la recherche textuelle.
 
-## 4.5 Statistiques
+## Statistiques
 
-**Route** : `/stats/`
+**Chemin** : `/stats/`
 
 Graphiques interactifs :
 1. **Répartition par genre** : Diagramme en barres horizontales
@@ -260,9 +239,9 @@ Graphiques interactifs :
 
 **Implémentation** : Aggregation Pipeline MongoDB + Chart.js côté client.
 
-## 4.6 Détail d'une personne
+## Détail d'une personne
 
-**Route** : `/persons/<nconst>/`
+**Chemin** : `/persons/<pid>/`
 
 Informations affichées :
 - Nom
@@ -274,7 +253,7 @@ Informations affichées :
 
 # 5. Stratégie multi-bases
 
-## 5.1 Principe
+## Principe
 
 L'application utilise deux bases de données complémentaires :
 
@@ -286,13 +265,7 @@ L'application utilise deux bases de données complémentaires :
 | Statistiques | MongoDB | Aggregation Pipeline puissant |
 | Détail personne | MongoDB | Filmographie imbriquée |
 
-## 5.2 Avantages de cette approche
-
-1. **Performance optimale** : Chaque base est utilisée pour ce qu'elle fait de mieux
-2. **Flexibilité** : Les données imbriquées de MongoDB simplifient les détails
-3. **Évolutivité** : Le replica set MongoDB assure la haute disponibilité
-
-## 5.3 Implémentation
+## Implémentation
 
 ```python
 # sqlite_service.py - Pour les listes
@@ -311,7 +284,7 @@ def get_movie_details(tconst):
     return movie  # Document complet avec cast, crew, etc.
 ```
 
-## 5.4 Enrichissement des données
+## Enrichissement des données
 
 Un problème identifié : MongoDB contenait des valeurs `null` pour les personnages. Solution implémentée :
 
@@ -333,14 +306,14 @@ def get_movie_details(tconst):
 
 # 6. Benchmarks de performance
 
-## 6.1 Méthodologie
+## Méthodologie
 
 Tests effectués sur :
 - Machine : MacBook Air M2
 - Données : ~100 000 films, ~200 000 personnes
 - Mesure : Temps moyen sur 10 exécutions
 
-## 6.2 Résultats comparatifs
+## Résultats comparatifs
 
 ### Requête 1 : Liste des films (20 résultats, paginé)
 
@@ -378,7 +351,7 @@ Tests effectués sur :
 
 **Conclusion** : MongoDB 2.5x plus rapide pour les agrégations complexes.
 
-## 6.3 Impact des index MongoDB
+## Impact des index MongoDB
 
 | Requête | Sans index | Avec index | Amélioration |
 |---------|------------|------------|--------------|
@@ -393,7 +366,7 @@ db.movies_complete.createIndex({ "genres": 1 })
 db.movies_complete.createIndex({ "averageRating": -1 })
 ```
 
-## 6.4 Test du Replica Set
+## Test du Replica Set
 
 ### Failover automatique
 
@@ -405,24 +378,24 @@ db.movies_complete.createIndex({ "averageRating": -1 })
 
 ### Consistance des données
 
-| Test | Résultat |
-|------|----------|
-| Écriture sur primaire | ✅ Répliqué en < 1s |
-| Lecture après failover | ✅ Données cohérentes |
-| Rollback après partition | ✅ Géré automatiquement |
+| Test                     | Résultat                        |
+| ------------------------ | ------------------------------- |
+| Écriture sur primaire    | Répliqué en moins d'une seconde |
+| Lecture après failover   | Données cohérentes              |
+| Rollback après partition | Géré automatiquement            |
 
 ---
 
 # 7. Difficultés rencontrées et solutions
 
-## 7.1 Problème : Personnages non affichés
+## Problème : Personnages non affichés
 
 **Symptôme** : La liste des personnages (rôles) était vide dans le détail des films.
 
 **Diagnostic** : 
 ```python
 # MongoDB retournait :
-{"characters": [None]}  # au lieu de ["Tony Stark"]
+{"characters": [None]}  # au lieu de ["Tony Stark"] par exemple
 ```
 
 **Cause** : La migration vers MongoDB avait mal importé les données de la table `characters`.
@@ -440,7 +413,7 @@ def get_movie_characters(tconst):
     return {row['nconst']: row['characters'] for row in results}
 ```
 
-## 7.2 Problème : Episodes TV dans les résultats
+## Problème : Episodes TV dans les résultats
 
 **Symptôme** : La recherche de "Robert Downey Jr" retournait des épisodes TV comme des films.
 
@@ -452,7 +425,7 @@ def get_movie_characters(tconst):
 WHERE m.titleType NOT IN ('tvEpisode', 'tvSpecial')
 ```
 
-## 7.3 Problème : Variable `_id` inaccessible dans Django
+## Problème : Variable `_id` inaccessible dans Django
 
 **Symptôme** : Erreur lors de l'accès à `movie._id` dans les templates.
 
@@ -468,7 +441,7 @@ def get_movie_details(tconst):
     return movie
 ```
 
-## 7.4 Problème : Connexion MongoDB en replica set
+## Problème : Connexion MongoDB en replica set
 
 **Symptôme** : `ServerSelectionTimeoutError` au démarrage.
 
@@ -486,7 +459,7 @@ client = MongoClient(
 )
 ```
 
-## 7.5 Problème : Fichiers statiques non chargés
+## Problème : Fichiers statiques non chargés
 
 **Symptôme** : CSS et JS non appliqués (erreur 404).
 
@@ -500,10 +473,9 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 ```
 
-## 7.6 Difficultés avec Django
+## Difficultés avec Django
 
 Pour la partie Django (templates, vues, services), je me suis aidé de l'IA Claude Sonnet pour les parties que je ne comprenais pas, notamment :
-- La connexion avec MongoDB via PyMongo
 - La gestion des templates avec héritage (`{% extends %}`)
 - Le passage de contexte aux templates
 - La configuration des fichiers statiques
@@ -512,7 +484,7 @@ Pour la partie Django (templates, vues, services), je me suis aidé de l'IA Clau
 
 # 8. Conclusion
 
-## 8.1 Bilan technique
+## Bilan technique
 
 Ce projet a permis de mettre en pratique :
 
@@ -521,25 +493,11 @@ Ce projet a permis de mettre en pratique :
 - **Haute disponibilité** : Configuration et test d'un replica set
 - **Développement web** : Architecture MVC avec Django
 
-## 8.2 Points forts du projet
-
-1. **Architecture hybride** : Utilisation intelligente de chaque base selon ses forces
-2. **Interface utilisateur** : Design responsive et moderne avec Bootstrap
-3. **Visualisation** : Graphiques interactifs avec Chart.js
-4. **Robustesse** : Replica set pour la tolérance aux pannes
-
-## 8.3 Améliorations possibles
-
-- Ajouter un système de cache (Redis) pour les requêtes fréquentes
-- Implémenter une recherche full-text avec Elasticsearch
-- Ajouter l'authentification utilisateur et les favoris
-- Déployer sur un serveur cloud (AWS, Heroku)
-
-## 8.4 Compétences acquises
+## Compétences acquises
 
 - Maîtrise de SQLite et MongoDB
 - Configuration d'un replica set
-- Développement web avec Django
+	- Développement web avec Django
 - Optimisation des performances (indexation, choix de la base)
 
 ---
@@ -549,50 +507,84 @@ Ce projet a permis de mettre en pratique :
 ## A. Schéma de la base SQLite
 
 ```sql
-CREATE TABLE movies (
-    tconst TEXT PRIMARY KEY,
-    titleType TEXT,
-    primaryTitle TEXT,
-    originalTitle TEXT,
-    startYear INTEGER,
-    endYear INTEGER,
-    runtimeMinutes INTEGER
+sqlite> .schema
+CREATE TABLE IF NOT EXISTS "movies" (
+"mid" TEXT,
+  "titleType" TEXT,
+  "primaryTitle" TEXT,
+  "originalTitle" TEXT,
+  "isAdult" INTEGER,
+  "startYear" INTEGER,
+  "endYear" REAL,
+  "runtimeMinutes" REAL
 );
-
-CREATE TABLE persons (
-    nconst TEXT PRIMARY KEY,
-    primaryName TEXT,
-    birthYear INTEGER,
-    deathYear INTEGER
+CREATE TABLE IF NOT EXISTS "persons" (
+"pid" TEXT,
+  "primaryName" TEXT,
+  "birthYear" REAL,
+  "deathYear" REAL
 );
-
-CREATE TABLE principals (
-    tconst TEXT,
-    nconst TEXT,
-    ordering INTEGER,
-    category TEXT,
-    job TEXT,
-    PRIMARY KEY (tconst, nconst, ordering)
+CREATE TABLE IF NOT EXISTS "genres" (
+"mid" TEXT,
+  "genre" TEXT
 );
-
-CREATE TABLE genres (
-    tconst TEXT,
-    genre TEXT,
-    PRIMARY KEY (tconst, genre)
+CREATE TABLE IF NOT EXISTS "ratings" (
+"mid" TEXT,
+  "averageRating" REAL,
+  "numVotes" INTEGER
 );
-
-CREATE TABLE ratings (
-    tconst TEXT PRIMARY KEY,
-    averageRating REAL,
-    numVotes INTEGER
+CREATE TABLE IF NOT EXISTS "titles" (
+"mid" TEXT,
+  "ordering" INTEGER,
+  "title" TEXT,
+  "region" TEXT,
+  "language" TEXT,
+  "types" TEXT,
+  "attributes" TEXT,
+  "isOriginalTitle" INTEGER
 );
-
-CREATE TABLE characters (
-    tconst TEXT,
-    nconst TEXT,
-    characters TEXT,
-    PRIMARY KEY (tconst, nconst)
+CREATE TABLE IF NOT EXISTS "professions" (
+"pid" TEXT,
+  "jobName" TEXT
 );
+CREATE TABLE IF NOT EXISTS "directors" (
+"mid" TEXT,
+  "pid" TEXT
+);
+CREATE TABLE IF NOT EXISTS "writers" (
+"mid" TEXT,
+  "pid" TEXT
+);
+CREATE TABLE IF NOT EXISTS "characters" (
+"mid" TEXT,
+  "pid" TEXT,
+  "name" TEXT
+);
+CREATE TABLE IF NOT EXISTS "principals" (
+"mid" TEXT,
+  "ordering" INTEGER,
+  "pid" TEXT,
+  "category" TEXT,
+  "job" TEXT
+);
+CREATE TABLE IF NOT EXISTS "knownformovies" (
+"pid" TEXT,
+  "mid" TEXT
+);
+CREATE INDEX idx_persons_name ON persons(primaryName);
+CREATE INDEX idx_principals_mid ON principals(mid);
+CREATE INDEX idx_principals_pid ON principals(pid);
+CREATE INDEX idx_directors_mid ON directors(mid);
+CREATE INDEX idx_directors_pid ON directors(pid);
+CREATE INDEX idx_genres_mid ON genres(mid);
+CREATE INDEX idx_genres_genre ON genres(genre);
+CREATE INDEX idx_ratings_mid ON ratings(mid);
+CREATE INDEX idx_ratings_numVotes ON ratings(numVotes);
+CREATE INDEX idx_characters_mid ON characters(mid);
+CREATE INDEX idx_characters_pid ON characters(pid);
+CREATE INDEX idx_knownformovies_pid ON knownformovies(pid);
+CREATE INDEX idx_knownformovies_mid ON knownformovies(mid);
+CREATE TABLE sqlite_sequence(name,seq);
 ```
 
 ## B. Structure d'un document MongoDB
@@ -626,32 +618,3 @@ CREATE TABLE characters (
     "writers": [...]
 }
 ```
-
-## C. Commandes utiles
-
-```bash
-# Démarrer MongoDB replica set
-mongod --replSet rs0 --port 27017 --dbpath data/mongo/db-1
-mongod --replSet rs0 --port 27018 --dbpath data/mongo/db-2
-mongod --replSet rs0 --port 27019 --dbpath data/mongo/db-3
-
-# Initialiser le replica set
-mongosh --eval 'rs.initiate({
-    _id: "rs0",
-    members: [
-        {_id: 0, host: "localhost:27017"},
-        {_id: 1, host: "localhost:27018"},
-        {_id: 2, host: "localhost:27019"}
-    ]
-})'
-
-# Lancer Django
-cd django && python manage.py runserver
-
-# Vérifier le statut du replica set
-mongosh --eval 'rs.status()'
-```
-
----
-
-*Rapport généré le 11 janvier 2026*
