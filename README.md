@@ -78,11 +78,9 @@ python benchmark.py
 ### 4.1 Démarrage de MongoDB (instance standalone)
 
 ```bash
-# Démarrer MongoDB via Homebrew (macOS)
-brew services start mongodb-community
-
-# OU démarrer manuellement
-mongod --config /opt/homebrew/etc/mongod.conf
+# Démarrer MongoDB avec la base
+cd ../../data
+mongod –dbpath ./data/mongo/standalone
 ```
 
 ### 4.2 Migration des Données vers MongoDB
@@ -94,7 +92,7 @@ cd ../phase2_mongodb
 python migrate_flat.py
 ```
 
-#### Structure Dénormalisée (Structured)
+#### Structure Dénormalisée (Structured) (pensez à bien lancer indexation.py **AVANT** de lancer `migrate_structured.py`)
 
 ```bash
 python migrate_structured.py
