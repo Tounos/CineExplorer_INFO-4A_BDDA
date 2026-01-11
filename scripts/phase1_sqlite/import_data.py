@@ -6,24 +6,23 @@ import os
 from datetime import datetime
 
 print("Import des données dans la base de données SQLite")
-temps = datetime.now() #pour les stats
+temps = datetime.now()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 chemin_db = os.path.join(script_dir, "..", "..", "data", "csv", "imdb.db")
 chemin_csv = os.path.join(script_dir, "..", "..", "data", "csv") + os.sep
 
-# Normaliser les chemins
 chemin_db = os.path.normpath(chemin_db)
 chemin_csv = os.path.normpath(chemin_csv) + os.sep
 
-stats = {"succes": {}, "erreurs": 0}
+stats = {"succes": {}, "erreurs": 0, "filtrees": {}}
 
 try:
     conn = sqlite3.connect(chemin_db)
     conn.execute("PRAGMA foreign_keys = ON")
     cur = conn.cursor()
 
-    #Créations des dataframes pandas à partir des fichiers CSV
+    # Chargement des CSV
     movies_df = pd.read_csv(chemin_csv + "movies.csv", low_memory=False)
     persons_df = pd.read_csv(chemin_csv + "persons.csv", low_memory=False)
     characters_df = pd.read_csv(chemin_csv + "characters.csv", low_memory=False)
@@ -36,38 +35,70 @@ try:
     titles_df = pd.read_csv(chemin_csv + "titles.csv", low_memory=False)
     writers_df = pd.read_csv(chemin_csv + "writers.csv", low_memory=False)
 
-    #Dictionnaire avec les noms de colonnes pour chaque table
-    tables_df = {
-        "movies": (movies_df, ['mid', 'titleType', 'primaryTitle', 'originalTitle', 
-                               'isAdult', 'startYear', 'endYear', 'runtimeMinutes']),
-        "persons": (persons_df, ['pid', 'primaryName', 'birthYear', 'deathYear']),
-        "genres": (genres_df, ['mid', 'genre']),
-        "ratings": (ratings_df, ['mid', 'averageRating', 'numVotes']),
-        "titles": (titles_df, ['mid', 'ordering', 'title', 'region', 'language', 
-                               'types', 'attributes', 'isOriginalTitle']),
-        "professions": (professions_df, ['pid', 'jobName']),
-        "directors": (directors_df, ['mid', 'pid']),
-        "writers": (writers_df, ['mid', 'pid']),
-        "characters": (characters_df, ['mid', 'pid', 'name']),
-        "principals": (principals_df, ['mid', 'ordering', 'pid', 'category', 'job']),
-        "knownformovies": (knownformovies_df, ['pid', 'mid']),
-    }
+    # Renommer les colonnes
+    movies_df.columns = ['mid', 'titleType', 'primaryTitle', 'originalTitle', 
+                         'isAdult', 'startYear', 'endYear', 'runtimeMinutes']
+    persons_df.columns = ['pid', 'primaryName', 'birthYear', 'deathYear']
+    genres_df.columns = ['mid', 'genre']
+    ratings_df.columns = ['mid', 'averageRating', 'numVotes']
+    titles_df.columns = ['mid', 'ordering', 'title', 'region', 'language', 
+                         'types', 'attributes', 'isOriginalTitle']
+    professions_df.columns = ['pid', 'jobName']
+    directors_df.columns = ['mid', 'pid']
+    writers_df.columns = ['mid', 'pid']
+    characters_df.columns = ['mid', 'pid', 'name']
+    principals_df.columns = ['mid', 'ordering', 'pid', 'category', 'job']
+    knownformovies_df.columns = ['pid', 'mid']
 
-    for table, (df, columns) in tables_df.items():
+    # Sets des clés primaires valides
+    valid_mids = set(movies_df['mid'].dropna().unique())
+    valid_pids = set(persons_df['pid'].dropna().unique())
 
+    def filter_fk(df, table_name, mid_col=None, pid_col=None):
+        """Filtre les lignes avec clés étrangères invalides"""
+        original_len = len(df)
+        if mid_col and mid_col in df.columns:
+            df = df[df[mid_col].isin(valid_mids)]
+        if pid_col and pid_col in df.columns:
+            df = df[df[pid_col].isin(valid_pids)]
+        filtered = original_len - len(df)
+        if filtered > 0:
+            stats["filtrees"][table_name] = filtered
+        return df
+
+    # Filtrer les tables avec FK
+    directors_df = filter_fk(directors_df, "directors", mid_col='mid', pid_col='pid')
+    writers_df = filter_fk(writers_df, "writers", mid_col='mid', pid_col='pid')
+    characters_df = filter_fk(characters_df, "characters", mid_col='mid', pid_col='pid')
+    principals_df = filter_fk(principals_df, "principals", mid_col='mid', pid_col='pid')
+    knownformovies_df = filter_fk(knownformovies_df, "knownformovies", mid_col='mid', pid_col='pid')
+    genres_df = filter_fk(genres_df, "genres", mid_col='mid')
+    ratings_df = filter_fk(ratings_df, "ratings", mid_col='mid')
+    titles_df = filter_fk(titles_df, "titles", mid_col='mid')
+    professions_df = filter_fk(professions_df, "professions", pid_col='pid')
+
+    # Ordre d'insertion (tables principales d'abord)
+    tables_df = [
+        ("movies", movies_df),
+        ("persons", persons_df),
+        ("genres", genres_df),
+        ("ratings", ratings_df),
+        ("titles", titles_df),
+        ("professions", professions_df),
+        ("directors", directors_df),
+        ("writers", writers_df),
+        ("characters", characters_df),
+        ("principals", principals_df),
+        ("knownformovies", knownformovies_df),
+    ]
+
+    for table, df in tables_df:
         try:
-            #Renommer les colonnes pour correspondre au schéma de la base de données
-            df.columns = columns
-            
-            #Naan en None pour les valeurs manquantes
             df = df.where(pd.notnull(df), None)
-
-            #supprimer les doublons si nécessaire
             rows_avant = len(df)
             df = df.drop_duplicates()
             duplicatas = rows_avant - len(df)
 
-            #Insertion des données dans la table correspondante
             df.to_sql(table, conn, if_exists="append", index=False)
 
             print(f"Insertion réussie dans la table {table} : {len(df)} lignes insérées.")
@@ -79,23 +110,27 @@ try:
         except sqlite3.Error as e:
             print(f"Erreur lors de l'insertion dans la table {table} : {e}")
             stats["erreurs"] += 1
+
     conn.commit()
 
-    #Stats
+    # Stats
     temps = (datetime.now() - temps).total_seconds()
     total_rows = sum(t["lignes_inserees"] for t in stats["succes"].values())
     total_duplicatas = sum(t["duplicatas"] for t in stats["succes"].values())
+    total_filtrees = sum(stats["filtrees"].values())
+
     print("\nStatistiques d'importation :")
     print(f"Tables importées    : {len(stats['succes'])}")
     print(f"Total lignes        : {total_rows:,}")
     print(f"Doublons supprimés  : {total_duplicatas:,}")
+    print(f"Lignes filtrées (FK): {total_filtrees:,}")
     print(f"Erreurs             : {stats['erreurs']}")
     print(f"Temps d'exécution   : {temps:.2f}s")
 
-    print("\nDétail par table :")
-    for table, info in stats["succes"].items():
-        dup_str = f" ({info["duplicatas"]} doublons)" if info["duplicatas"] > 0 else ""
-        print(f"  {table:<15} : {info["lignes_inserees"]:>6} lignes{dup_str}")
+    if stats["filtrees"]:
+        print("\nLignes filtrées par table (clés étrangères invalides) :")
+        for table, count in stats["filtrees"].items():
+            print(f"  {table:<15} : {count:>6} lignes")
 
 except sqlite3.Error as e:
     print(f"Erreur lors de l'import des données : {e}")
