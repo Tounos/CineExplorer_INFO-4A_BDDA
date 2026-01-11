@@ -1,0 +1,153 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}CineExplorer - Liste des films{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+            <li class="breadcrumb-item active">Films</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3"><i class="bi bi-collection-play"></i> Liste des films</h1>
+    <span class="badge bg-warning text-dark fs-6">{{ total }} films trouvés</span>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-funnel"></i> Filtres et tri</div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'movie_list' %}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="genre" class="form-label">Genre</label>
+                    <select name="genre" id="genre" class="form-select">
+                        <option value="">Tous les genres</option>
+                        {% for g in genres %}
+                        <option value="{{ g }}" {% if current_filters.genre == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="year_min" class="form-label">Année min</label>
+                    <input type="number" name="year_min" id="year_min" class="form-control" placeholder="1900" min="1800" max="2030" value="{{ current_filters.year_min }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="year_max" class="form-label">Année max</label>
+                    <input type="number" name="year_max" id="year_max" class="form-control" placeholder="2025" min="1800" max="2030" value="{{ current_filters.year_max }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="rating_min" class="form-label">Note min</label>
+                    <select name="rating_min" id="rating_min" class="form-select">
+                        <option value="">Toutes</option>
+                        {% for i in "123456789" %}
+                        <option value="{{ i }}" {% if current_filters.rating_min == i %}selected{% endif %}>{{ i }}+ ⭐</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="sort" class="form-label">Trier par</label>
+                    <div class="input-group">
+                        <select name="sort" id="sort" class="form-select">
+                            <option value="rating" {% if current_filters.sort == 'rating' %}selected{% endif %}>Note</option>
+                            <option value="title" {% if current_filters.sort == 'title' %}selected{% endif %}>Titre</option>
+                            <option value="year" {% if current_filters.sort == 'year' %}selected{% endif %}>Année</option>
+                        </select>
+                        <select name="order" class="form-select">
+                            <option value="desc" {% if current_filters.order == 'desc' %}selected{% endif %}>Décroissant</option>
+                            <option value="asc" {% if current_filters.order == 'asc' %}selected{% endif %}>Croissant</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Appliquer</button>
+                    <a href="{% url 'movie_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i> Réinitialiser</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for movie in movies %}
+    <div class="col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100">
+            <div class="movie-poster-placeholder" style="height: 150px;">
+                <i class="bi bi-film" style="font-size: 3rem;"></i>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">
+                    <a href="{% url 'movie_detail' movie_id=movie.mid %}" class="text-decoration-none text-dark">{{ movie.primaryTitle|truncatechars:40 }}</a>
+                </h6>
+                <p class="card-text mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> {{ movie.startYear|default:"N/A" }}
+                        {% if movie.runtimeMinutes %}| <i class="bi bi-clock"></i> {{ movie.runtimeMinutes }} min{% endif %}
+                    </small>
+                </p>
+                {% if movie.averageRating %}
+                <div class="rating-stars mb-2">
+                    <i class="bi bi-star-fill"></i> {{ movie.averageRating|floatformat:1 }}/10
+                    <small class="text-muted">({{ movie.numVotes|default:0 }})</small>
+                </div>
+                {% else %}
+                <div class="text-muted mb-2"><small><i class="bi bi-star"></i> Non noté</small></div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{% url 'movie_detail' movie_id=movie.mid %}" class="btn btn-primary btn-sm w-100"><i class="bi bi-eye"></i> Détails</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-info-circle display-4"></i>
+            <h4 class="mt-3">Aucun film trouvé</h4>
+            <p class="text-muted">Essayez de modifier vos critères.</p>
+            <a href="{% url 'movie_list' %}" class="btn btn-primary"><i class="bi bi-arrow-left"></i> Voir tous les films</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<nav aria-label="Pagination" class="mt-5">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not has_previous %}disabled{% endif %}">
+            <a class="page-link" href="?page=1&genre={{ current_filters.genre }}&year_min={{ current_filters.year_min }}&year_max={{ current_filters.year_max }}&rating_min={{ current_filters.rating_min }}&sort={{ current_filters.sort }}&order={{ current_filters.order }}">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item {% if not has_previous %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ previous_page }}&genre={{ current_filters.genre }}&year_min={{ current_filters.year_min }}&year_max={{ current_filters.year_max }}&rating_min={{ current_filters.rating_min }}&sort={{ current_filters.sort }}&order={{ current_filters.order }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% for page_num in page_range %}
+        <li class="page-item {% if page_num == current_page %}active{% endif %}">
+            <a class="page-link" href="?page={{ page_num }}&genre={{ current_filters.genre }}&year_min={{ current_filters.year_min }}&year_max={{ current_filters.year_max }}&rating_min={{ current_filters.rating_min }}&sort={{ current_filters.sort }}&order={{ current_filters.order }}">{{ page_num }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ next_page }}&genre={{ current_filters.genre }}&year_min={{ current_filters.year_min }}&year_max={{ current_filters.year_max }}&rating_min={{ current_filters.rating_min }}&sort={{ current_filters.sort }}&order={{ current_filters.order }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ total_pages }}&genre={{ current_filters.genre }}&year_min={{ current_filters.year_min }}&year_max={{ current_filters.year_max }}&rating_min={{ current_filters.rating_min }}&sort={{ current_filters.sort }}&order={{ current_filters.order }}">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+    </ul>
+    <p class="text-center text-muted">Page {{ current_page }} sur {{ total_pages }}</p>
+</nav>
+{% endif %}
+{% endblock %}

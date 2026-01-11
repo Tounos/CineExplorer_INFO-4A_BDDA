@@ -1,0 +1,212 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}{{ movie.title }} - CineExplorer{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'movie_list' %}">Films</a></li>
+            <li class="breadcrumb-item active">{{ movie.title|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="movie-poster-placeholder" style="height: 350px;">
+                <i class="bi bi-film" style="font-size: 6rem;"></i>
+            </div>
+        </div>
+        {% if movie.rating %}
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <div class="display-4 rating-stars">
+                    <i class="bi bi-star-fill"></i> {{ movie.rating.average|floatformat:1 }}
+                </div>
+                <p class="text-muted mb-0">sur 10 ({{ movie.rating.votes|default:0 }} votes)</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <h1 class="display-5 mb-3">{{ movie.title }}</h1>
+        
+        {% if movie.title != movie.originalTitle and movie.originalTitle %}
+        <p class="text-muted fst-italic">Titre original : {{ movie.originalTitle }}</p>
+        {% endif %}
+        
+        <div class="mb-4">
+            {% if movie.year %}<span class="badge bg-secondary me-2"><i class="bi bi-calendar"></i> {{ movie.year }}</span>{% endif %}
+            {% if movie.runtime %}<span class="badge bg-secondary me-2"><i class="bi bi-clock"></i> {{ movie.runtime }} min</span>{% endif %}
+        </div>
+        
+        {% if movie.genres %}
+        <div class="mb-4">
+            <h6><i class="bi bi-tags"></i> Genres</h6>
+            {% for genre in movie.genres %}<span class="badge badge-genre">{{ genre }}</span> {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if movie.directors %}
+        <div class="mb-4">
+            <h6><i class="bi bi-camera-reels"></i> Réalisateur(s)</h6>
+            <ul class="list-unstyled">
+                {% for director in movie.directors %}
+                <li>
+                    {% if director.person_id %}
+                    <a href="{% url 'person_detail' person_id=director.person_id %}" class="text-decoration-none">
+                        <i class="bi bi-person-fill text-muted"></i> {{ director.name|default:"Inconnu" }}
+                    </a>
+                    {% else %}
+                    <i class="bi bi-person-fill text-muted"></i> {{ director.name|default:"Inconnu" }}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if movie.writers %}
+        <div class="mb-4">
+            <h6><i class="bi bi-pencil"></i> Scénariste(s)</h6>
+            <ul class="list-unstyled">
+                {% for writer in movie.writers %}
+                <li>
+                    {% if writer.person_id %}
+                    <a href="{% url 'person_detail' person_id=writer.person_id %}" class="text-decoration-none">
+                        <i class="bi bi-person text-muted"></i> {{ writer.name|default:"Inconnu" }}
+                        {% if writer.category %}<small class="text-muted">({{ writer.category }})</small>{% endif %}
+                    </a>
+                    {% else %}
+                    <i class="bi bi-person text-muted"></i> {{ writer.name|default:"Inconnu" }}
+                    {% if writer.category %}<small class="text-muted">({{ writer.category }})</small>{% endif %}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if movie.cast %}
+<section class="mb-5">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-people"></i> Casting ({{ movie.cast|length }} personnes)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Acteur/Actrice</th>
+                            <th>Personnage(s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for actor in movie.cast %}
+                        <tr>
+                            <td>{{ actor.ordering|default:forloop.counter }}</td>
+                            <td>
+                                {% if actor.person_id %}
+                                <a href="{% url 'person_detail' person_id=actor.person_id %}" class="text-decoration-none">
+                                    <i class="bi bi-person-fill text-muted"></i> {{ actor.name|default:"Inconnu" }}
+                                </a>
+                                {% else %}
+                                <i class="bi bi-person-fill text-muted"></i> {{ actor.name|default:"Inconnu" }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for character in actor.characters %}
+                                    {% if character and character != "None" %}
+                                        <span class="badge bg-light text-dark">{{ character }}</span>
+                                    {% endif %}
+                                {% empty %}
+                                    <span class="text-muted">Non spécifié</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if movie.titles %}
+<section class="mb-5">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-globe"></i> Titres alternatifs</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Région</th>
+                            <th>Titre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alt_title in movie.titles %}
+                        <tr>
+                            <td>
+                                {% if alt_title.region %}
+                                    <span class="badge bg-primary">{{ alt_title.region }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">International</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ alt_title.title }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if similar_movies %}
+<section class="mb-5">
+    <h4 class="mb-4"><i class="bi bi-film"></i> Films similaires</h4>
+    <div class="row g-4">
+        {% for similar in similar_movies %}
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="card h-100">
+                <div class="movie-poster-placeholder" style="height: 120px;">
+                    <i class="bi bi-film" style="font-size: 2rem;"></i>
+                </div>
+                <div class="card-body p-2">
+                    <h6 class="card-title" style="font-size: 0.85rem;">
+                        <a href="{% url 'movie_detail' movie_id=similar.id %}" class="text-decoration-none text-dark">{{ similar.title|truncatechars:25 }}</a>
+                    </h6>
+                    <p class="card-text mb-0"><small class="text-muted">{{ similar.year|default:"" }}</small></p>
+                    {% if similar.rating %}
+                    <small class="rating-stars"><i class="bi bi-star-fill"></i> {{ similar.rating.average|floatformat:1 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<div class="d-flex gap-2">
+    <a href="{% url 'movie_list' %}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Retour à la liste</a>
+    <a href="{% url 'search' %}?q={{ movie.title|urlencode }}" class="btn btn-outline-secondary"><i class="bi bi-search"></i> Rechercher ce titre</a>
+</div>
+{% endblock %}

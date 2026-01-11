@@ -1,0 +1,121 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}{{ person.primaryName }} - CineExplorer{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'search' %}">Recherche</a></li>
+            <li class="breadcrumb-item active">{{ person.primaryName|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="d-flex align-items-center justify-content-center" style="height: 300px; background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--light-yellow) 100%); border-radius: 8px;">
+                <i class="bi bi-person-fill" style="font-size: 8rem; color: var(--dark-yellow);"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <h1 class="display-5 mb-3">{{ person.primaryName }}</h1>
+        
+        <div class="mb-4">
+            {% if person.birthYear %}
+            <span class="badge bg-secondary me-2">
+                <i class="bi bi-calendar"></i> {{ person.birthYear }}{% if person.deathYear %} - {{ person.deathYear }}{% endif %}
+            </span>
+            {% endif %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-film"></i> {{ total_films }} film(s)</span>
+        </div>
+        
+        {% if person.professions %}
+        <div class="mb-4">
+            <h6><i class="bi bi-briefcase"></i> Métiers</h6>
+            {% for profession in person.professions %}<span class="badge badge-genre">{{ profession }}</span> {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="mb-4">
+            <h6><i class="bi bi-bar-chart"></i> Résumé</h6>
+            <div class="d-flex flex-wrap gap-2">
+                {% for category, films in filmography %}
+                <span class="badge bg-light text-dark border">{{ category|title }}: {{ films|length }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="mb-5">
+    <h2 class="h4 mb-4"><i class="bi bi-collection-play"></i> Filmographie complète</h2>
+    
+    <ul class="nav nav-tabs mb-4" id="filmographyTabs" role="tablist">
+        {% for category, films in filmography %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}" id="tab-{{ category }}" data-bs-toggle="tab" data-bs-target="#content-{{ category }}" type="button" role="tab">
+                {{ category|title }} ({{ films|length }})
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <div class="tab-content" id="filmographyTabsContent">
+        {% for category, films in filmography %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="content-{{ category }}" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Année</th>
+                            <th>Titre</th>
+                            {% if category == 'actor' or category == 'actress' %}<th>Personnage</th>{% endif %}
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for film in films %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ film.startYear|default:"-" }}</span></td>
+                            <td>
+                                <a href="{% url 'movie_detail' movie_id=film.mid %}" class="text-decoration-none">{{ film.primaryTitle }}</a>
+                                {% if film.runtimeMinutes %}<small class="text-muted">({{ film.runtimeMinutes }} min)</small>{% endif %}
+                            </td>
+                            {% if category == 'actor' or category == 'actress' %}
+                            <td>
+                                {% if film.characters %}
+                                    <span class="badge bg-light text-dark">{{ film.characters }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            <td>
+                                {% if film.averageRating %}
+                                <span class="rating-stars"><i class="bi bi-star-fill"></i> {{ film.averageRating|floatformat:1 }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="d-flex gap-2">
+    <a href="{% url 'search' %}?q={{ person.primaryName|urlencode }}" class="btn btn-outline-primary"><i class="bi bi-search"></i> Rechercher cette personne</a>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+{% endblock %}

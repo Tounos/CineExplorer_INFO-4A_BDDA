@@ -1,0 +1,133 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}Statistiques - CineExplorer{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+            <li class="breadcrumb-item active">Statistiques</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4"><i class="bi bi-bar-chart-fill"></i> Statistiques</h1>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-bar-chart"></i> Films par genre</div>
+            <div class="card-body"><canvas id="genreChart" height="300"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-graph-up"></i> Films par décennie</div>
+            <div class="card-body"><canvas id="decadeChart" height="300"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-bar-chart-steps"></i> Distribution des notes</div>
+            <div class="card-body"><canvas id="ratingChart" height="300"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-people-fill"></i> Top 10 acteurs</div>
+            <div class="card-body"><canvas id="actorsChart" height="300"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-trophy"></i> Top 10 Acteurs (détails)</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr><th>#</th><th>Nom</th><th>Films</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for actor in top_actors %}
+                            <tr>
+                                <td><span class="badge bg-warning text-dark">{{ forloop.counter }}</span></td>
+                                <td>{{ actor.primaryName }}</td>
+                                <td><span class="badge bg-primary">{{ actor.film_count }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center text-muted">Aucune donnée</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-database"></i> Base SQLite</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Taille :</strong> {{ sqlite_stats.total_size_mb }} MB</p>
+                <p class="mb-2"><strong>Tables :</strong> {{ sqlite_stats.tables|length }}</p>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Table</th><th>Lignes</th></tr></thead>
+                        <tbody>
+                            {% for table, count in sqlite_stats.table_counts.items %}
+                            <tr><td>{{ table }}</td><td>{{ count }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header"><i class="bi bi-database-fill"></i> Base MongoDB</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Taille :</strong> {{ mongo_stats.total_size_mb }} MB</p>
+                <p class="mb-2"><strong>Collections :</strong> {{ mongo_stats.collections|length }}</p>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Collection</th><th>Documents</th></tr></thead>
+                        <tbody>
+                            {% for collection, count in mongo_stats.collection_counts.items %}
+                            <tr><td>{{ collection }}</td><td>{{ count }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/stats.js' %}"></script>
+<script>
+    const genreLabels = [{% for genre, count in genre_stats.items %}'{{ genre }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const genreValues = [{% for genre, count in genre_stats.items %}{{ count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    initGenreChart(genreLabels, genreValues);
+
+    const decadeLabels = [{% for decade, count in decade_stats.items %}'{{ decade }}s'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const decadeValues = [{% for decade, count in decade_stats.items %}{{ count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    initDecadeChart(decadeLabels, decadeValues);
+
+    const ratingLabels = [{% for note, count in rating_distribution.items %}'{{ note }}-{{ note|add:1 }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const ratingValues = [{% for note, count in rating_distribution.items %}{{ count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    initRatingChart(ratingLabels, ratingValues);
+
+    const actorsLabels = [{% for actor in top_actors %}'{{ actor.primaryName|truncatechars:20 }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const actorsValues = [{% for actor in top_actors %}{{ actor.film_count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    initActorsChart(actorsLabels, actorsValues);
+</script>
+{% endblock %}

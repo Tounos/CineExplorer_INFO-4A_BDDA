@@ -1,0 +1,177 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}CineExplorer - Accueil{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="text-center mb-5">
+    <h1 class="display-4 mb-3">
+        <i class="bi bi-film text-warning"></i> Bienvenue sur CineExplorer
+    </h1>
+    <p class="lead text-muted mb-4">Explorez notre base de données de films avec SQLite et MongoDB</p>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <form action="{% url 'search' %}" method="GET" class="d-flex">
+                <input type="search" name="q" class="form-control form-control-lg me-2" placeholder="Rechercher un film ou un acteur..." required>
+                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-search"></i> Rechercher</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <h2 class="h4 mb-4"><i class="bi bi-bar-chart-fill"></i> Statistiques de la base</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <i class="bi bi-film" style="font-size: 2rem;"></i>
+                <div class="stat-number">{{ stats.movies_count|default:0 }}</div>
+                <div class="stat-label">Films</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
+                <div class="stat-number">{{ stats.actors_count|default:0 }}</div>
+                <div class="stat-label">Acteurs</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <i class="bi bi-camera-reels-fill" style="font-size: 2rem;"></i>
+                <div class="stat-number">{{ stats.directors_count|default:0 }}</div>
+                <div class="stat-label">Réalisateurs</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0"><i class="bi bi-star-fill text-warning"></i> Top 10 des films les mieux notés</h2>
+        <a href="{% url 'movie_list' %}?sort=rating&order=desc" class="btn btn-outline-primary btn-sm">Voir tous les films <i class="bi bi-arrow-right"></i></a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Titre</th>
+                    <th>Année</th>
+                    <th>Note</th>
+                    <th>Votes</th>
+                    <th>Genres</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movie in top_movies %}
+                <tr>
+                    <td><span class="badge bg-warning text-dark">{{ forloop.counter }}</span></td>
+                    <td>
+                        <a href="{% url 'movie_detail' movie_id=movie.id %}" class="text-decoration-none fw-bold">{{ movie.title }}</a>
+                    </td>
+                    <td>{{ movie.year|default:"-" }}</td>
+                    <td>
+                        <span class="rating-stars"><i class="bi bi-star-fill"></i> {{ movie.rating.average|floatformat:1 }}</span>
+                    </td>
+                    <td><small class="text-muted">{{ movie.rating.votes|default:0 }} votes</small></td>
+                    <td>
+                        {% for genre in movie.genres|slice:":3" %}
+                            <span class="badge badge-genre">{{ genre }}</span>
+                        {% empty %}
+                            <span class="text-muted">-</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4"><i class="bi bi-exclamation-circle"></i> Aucun film trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0"><i class="bi bi-shuffle"></i> Sélection aléatoire</h2>
+        <a href="{% url 'movie_list' %}" class="btn btn-outline-primary btn-sm">Parcourir tous les films <i class="bi bi-arrow-right"></i></a>
+    </div>
+    
+    <div class="row g-4">
+        {% for movie in random_movies %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="movie-poster-placeholder"><i class="bi bi-film"></i></div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'movie_detail' movie_id=movie.id %}" class="text-decoration-none text-dark">{{ movie.title }}</a>
+                    </h5>
+                    <p class="card-text"><small class="text-muted">{{ movie.year|default:"Année inconnue" }}</small></p>
+                    <div class="mb-2">
+                        {% for genre in movie.genres|slice:":2" %}
+                            <span class="badge badge-genre">{{ genre }}</span>
+                        {% endfor %}
+                    </div>
+                    {% if movie.rating %}
+                    <div class="rating-stars">
+                        <i class="bi bi-star-fill"></i> {{ movie.rating.average|floatformat:1 }}/10
+                        <small class="text-muted">({{ movie.rating.votes }} votes)</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'movie_detail' movie_id=movie.id %}" class="btn btn-primary btn-sm w-100"><i class="bi bi-eye"></i> Voir les détails</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center"><i class="bi bi-info-circle"></i> Aucun film disponible.</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-collection-play display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Parcourir les films</h5>
+                    <p class="card-text text-muted">Explorez notre catalogue avec des filtres avancés</p>
+                    <a href="{% url 'movie_list' %}" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Accéder</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-search display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Recherche avancée</h5>
+                    <p class="card-text text-muted">Trouvez films et acteurs par nom</p>
+                    <a href="{% url 'search' %}" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Rechercher</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-graph-up display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Statistiques</h5>
+                    <p class="card-text text-muted">Visualisez les données avec des graphiques</p>
+                    <a href="{% url 'stats' %}" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Voir les stats</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

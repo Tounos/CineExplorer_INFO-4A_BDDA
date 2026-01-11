@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MongoDB data (trop volumineux)
+data/mongo/
+
+# SQLite database (trop volumineux - à recréer avec les scripts)
+data/csv/imdb.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environnement
+.env
+*.env

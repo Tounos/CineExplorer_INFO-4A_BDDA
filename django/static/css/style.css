@@ -1,0 +1,142 @@
+:root {
+    --primary-yellow: #F5D76E;
+    --dark-yellow: #D4AC0D;
+    --light-yellow: #FEF9E7;
+}
+
+body {
+    background-color: var(--light-yellow);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar {
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--dark-yellow) 100%);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    color: #333 !important;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: #000 !important;
+    transform: translateY(-2px);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.card-hover:hover {
+    background-color: var(--light-yellow);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--dark-yellow) 100%);
+    border: none;
+    color: #333;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--dark-yellow) 0%, #B8860B 100%);
+    color: #000;
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+    border-color: var(--dark-yellow);
+    color: var(--dark-yellow);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-yellow);
+    border-color: var(--dark-yellow);
+    color: #333;
+}
+
+.badge-genre {
+    background-color: var(--primary-yellow);
+    color: #333;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.rating-stars {
+    color: var(--dark-yellow);
+    font-weight: bold;
+}
+
+footer {
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--dark-yellow) 100%);
+    color: #333;
+    padding: 2rem 0;
+    margin-top: 4rem;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--dark-yellow) 100%);
+    padding: 4rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 50px 50px;
+}
+
+.movie-poster-placeholder {
+    background: linear-gradient(135deg, var(--primary-yellow) 0%, var(--light-yellow) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dark-yellow);
+}
+
+.table thead th {
+    background-color: var(--primary-yellow);
+    color: #333;
+    border: none;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--dark-yellow);
+}
+
+.page-link {
+    color: var(--dark-yellow);
+    border: 1px solid var(--primary-yellow);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-yellow);
+    border-color: var(--dark-yellow);
+    color: #333;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--primary-yellow);
+    border-color: var(--dark-yellow) var(--dark-yellow) transparent;
+    color: #333;
+}
+
+.nav-tabs .nav-link {
+    color: var(--dark-yellow);
+}
