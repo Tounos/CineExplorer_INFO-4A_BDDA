@@ -78,9 +78,10 @@ python benchmark.py
 ### 4.1 Démarrage de MongoDB (instance standalone)
 
 ```bash
-# Démarrer MongoDB avec la base
+# Démarrer MongoDB avec la base standalone
 cd ../../data
-mongod –dbpath ./data/mongo/standalone
+mkdir -p mongo/standalone
+mongod --dbpath ./data/mongo/standalone
 ```
 
 ### 4.2 Migration des Données vers MongoDB
@@ -88,7 +89,7 @@ mongod –dbpath ./data/mongo/standalone
 #### Structure Normalisée (Flat)
 
 ```bash
-cd ../phase2_mongodb
+cd ../scripts/phase2_mongodb
 python migrate_flat.py
 ```
 
@@ -118,22 +119,14 @@ python compare_performance.py
 ### 5.1 Arrêt de l'instance MongoDB Standalone
 
 ```bash
-# Arrêter MongoDB lancé via Homebrew
-brew services stop mongodb-community
+# Arrêter MongoDB
+pkill -f "mongod"
 ```
 
-### 5.2 Création des Répertoires pour le Replica Set
+### 5.2 Se placer dans le répertoire pour le Replica Set
 
 ```bash
 cd ../phase3_replica
-
-# Les répertoires seront créés automatiquement par le script
-# Mais vous pouvez les créer manuellement :
-mkdir -p ../../data/mongo/db-1
-mkdir -p ../../data/mongo/db-2
-mkdir -p ../../data/mongo/db-3
-mkdir -p ../../data/mongo/standalone
-mkdir -p ../../data/mongo/logs
 ```
 
 ### 5.3 Configuration des Permissions du Script
